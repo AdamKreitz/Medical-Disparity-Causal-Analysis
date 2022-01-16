@@ -10,3 +10,5 @@ file_name = 'all_cdc_data.csv'
 url = 'https://chronicdata.cdc.gov/resource/g4ie-h725.csv'
 file = requests.get(url)
 open(f'src/data/{file_name}','wb').write(file.content)
+
+
