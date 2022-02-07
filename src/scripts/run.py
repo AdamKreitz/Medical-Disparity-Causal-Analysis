@@ -14,10 +14,10 @@ from causallearn.utils.cit import fisherz
 from causallearn.utils.cit import mv_fisherz
 from causallearn.utils.cit import kci
 
-WHR_file_name = 'world-happiness-report.csv'
-WHR2021_file_name = 'world-happiness-report-2021.csv'
-CPDS_file_name = 'CPDS_1960-2019_Update_2021.xlsx'
-WHR_df = pd.read_csv('final_data/Cleaned_WHD.csv')
+cwd = os.getcwd()
+WHR_file_name = 'WHD_with_no_missing_data.csv'
+WHR_df = pd.read_csv(f'{cwd}\src\\final_data\{WHR_file_name}')
+
 #WHR2021_df = pd.read_csv('data\{WHR2021_file_name}')
 #CPDS_df = pd.read_excel('data\{CPDS_file_name}')
 
@@ -32,11 +32,12 @@ WHR_df = pd.read_csv('final_data/Cleaned_WHD.csv')
 #WHR2021_df = WHR2021_df.rename(columns = {'Ladder score':'Life Ladder','Logged GDP per capita':'Log GDP per capita',
                 #            'Healthy life expectancy':'Healthy life expectancy at birth'})
 
+
 WHR_df = WHR_df.rename(columns = {'Unnamed: 0': 'Country'})
 WHR_df = WHR_df.set_index('Country')
 
 cols = []
-labs = ['2006', '2009', '2012', '2015', '2018', '2021']
+labs = ['2007', '2009', '2012', '2015', '2018', '2021']
 for i in WHR_df.columns:
     if i[-4:] in labs:
         cols.append(i)
@@ -52,7 +53,7 @@ cg = pc(np.array(test), 0.05, \
 
 tier_list = {}
 for i in WHR_df.columns:
-    tier_list[i] = (int(i[-4:]) - 2005)
+    tier_list[i] = (int(i[-4:]) - 2006)
     
 ## Rename the nodes
     
