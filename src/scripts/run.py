@@ -16,7 +16,7 @@ from causallearn.utils.cit import kci
 
 cwd = os.getcwd()
 WHR_file_name = 'WHD_with_no_missing_data.csv'
-WHR_df = pd.read_csv(f'{cwd}\src\\final_data\{WHR_file_name}')
+WHR_df = pd.read_csv(f'{cwd}/src/final_data/{WHR_file_name}')
 
 #WHR2021_df = pd.read_csv('data\{WHR2021_file_name}')
 #CPDS_df = pd.read_excel('data\{CPDS_file_name}')
