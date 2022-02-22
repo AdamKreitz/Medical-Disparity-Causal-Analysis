@@ -195,5 +195,10 @@ print(f'Successfully made new csv file for WHR data called WHR_with_no_missing_d
 CPDS_file_name = 'cleaned_CPDS.xlsx'
 create_new_data(CPDS_file_name,'year','country','gov_data_with_no_missing_data.csv')
 
-
+# Add your own data here
+new_file_name = 'your_file_name'
+new_file_year_column_name = 'your_year_column_name'
+new_file_year_country_name = 'your_country_column_name'
+new_ouput_file_name = 'your_name_for_output_file.csv'
+#create_new_data(new_file_name,new_file_year_column_name,new_file_year_country_name,new_ouput_file_name)
 
