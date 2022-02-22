@@ -12,9 +12,9 @@ The pull should not take too long, but to run the code may take upwards of half 
 ## Reformat and combine your own data with World Health Report data
 1. In a local terminal, navigate to where you would like to place the repository of our code
 2. Clone this repository on to your local machine in the destination of your choice with: 
-'''
+```
 git clone https://github.com/mglevitt/Medical-Disparity-Causal-Analysis.git
-'''
+```
 4. Navigate into the repository of our code with: cd .\Medical-Disparity-Causal-Analysis\ 
 5. Install pipenv on your local machine if not previously installed to install the dependencies needed to run our code with: pip install pipenv
 6. Install all dependencies on to your local machine with: pipenv install .
