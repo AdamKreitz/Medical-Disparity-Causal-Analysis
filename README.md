@@ -11,12 +11,15 @@ The pull should not take too long, but to run the code may take upwards of half 
 
 ## Reformat and combine your own data with World Health Report data
 1. In a local terminal, navigate to where you would like to place the repository of our code
-2. Clone this repository on to your local machine in the destination of your choice with: git clone https://github.com/mglevitt/Medical-Disparity-Causal-Analysis.git
-3. Navigate into the repository of our code with: cd .\Medical-Disparity-Causal-Analysis\ 
-4. Install pipenv on your local machine if not previously installed to install the dependencies needed to run our code with: pip install pipenv
-5. Install all dependencies on to your local machine with: pipenv install .
-6. Save the data you would like to reformat to src/data as a csv or xlsx file
-7. Open the code of src/scripts/downloa_data.py with whatever method works from you local terminal or file exploror.
-8. Edit the 4 variables after the line "# Add your own data here" towards the bottom of the script to have the correct names for your file name, including the extension .csv or .xlsx, exact name for year and country columns in your data, the name for your output file before .csv, and finally delete the "#" from before the last line of code. 
-9. Save the changes to this file.
-10. Run the code to have your new data file added to src/final_data with your inputted file name with: pipenv run .\src\scripts\download_data.py
+2. Clone this repository on to your local machine in the destination of your choice with: 
+'''
+git clone https://github.com/mglevitt/Medical-Disparity-Causal-Analysis.git
+'''
+4. Navigate into the repository of our code with: cd .\Medical-Disparity-Causal-Analysis\ 
+5. Install pipenv on your local machine if not previously installed to install the dependencies needed to run our code with: pip install pipenv
+6. Install all dependencies on to your local machine with: pipenv install .
+7. Save the data you would like to reformat to src/data as a csv or xlsx file
+8. Open the code of src/scripts/downloa_data.py with whatever method works from you local terminal or file exploror.
+9. Edit the 4 variables after the line "# Add your own data here" towards the bottom of the script to have the correct names for your file name, including the extension .csv or .xlsx, exact name for year and country columns in your data, the name for your output file before .csv, and finally delete the "#" from before the last line of code. 
+10. Save the changes to this file.
+11. Run the code to have your new data file added to src/final_data with your inputted file name with: pipenv run .\src\scripts\download_data.py
