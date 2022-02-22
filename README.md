@@ -9,7 +9,7 @@ To run the project just run the following two lines of code in a Unix shell, we 
 
 The pull should not take too long, but to run the code may take upwards of half an hour as a result of the many computations being made with PC. The end output should be a dictionary of the relations we found that will be printed to your terminal and all the graphs of the relations we found will pop up on your device as the code is run. Feel free to consult us if you run into any difficulties with getting our code to run properly.
 
-## Add your own data to run causal analysis on
+## Reformat and combine your own data with World Health Report data
 1. In a local terminal, navigate to where you would like to place the repository of our code
 2. Clone this repository on to your local machine in the destination of your choice with: git clone https://github.com/mglevitt/Medical-Disparity-Causal-Analysis.git
 3. Navigate into the repository of our code with: cd .\Medical-Disparity-Causal-Analysis\ 
