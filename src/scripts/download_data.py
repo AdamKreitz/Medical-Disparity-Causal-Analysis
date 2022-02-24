@@ -2,6 +2,7 @@ import numpy as np
 import urllib
 import os
 import logging
+import regex as re
 from pathlib import Path
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -15,91 +16,73 @@ def load_in_new_data(file_name):
     except:
         return pd.read_excel(f'{cwd}\src\data\{file_name}')
 
-WHR_file_name = 'world-happiness-report.csv'
-WHR2021_file_name = 'world-happiness-report-2021.csv'
-WHR_df = load_in_new_data(WHR_file_name)
-WHR2021_df = load_in_new_data(WHR2021_file_name)
-
-# Clean WHR Data
-WHR_df = WHR_df.drop(columns = ['Positive affect','Negative affect'])
-WHR2021_df['year'] = 2021
-WHR2021_df = WHR2021_df.drop(columns = ['Standard error of ladder score','upperwhisker','lowerwhisker','Ladder score in Dystopia',
-                          'Explained by: Log GDP per capita','Explained by: Social support','Explained by: Healthy life expectancy',
-                          'Explained by: Freedom to make life choices','Explained by: Generosity','Explained by: Perceptions of corruption',
-                          'Dystopia + residual'])
-WHR2021_df = WHR2021_df.rename(columns = {'Ladder score':'Life Ladder','Logged GDP per capita':'Log GDP per capita',
-                            'Healthy life expectancy':'Healthy life expectancy at birth'})
-
-dic = {}
-for i in WHR2021_df['Regional indicator'].unique():
-    dic[i]=list(WHR2021_df[WHR2021_df['Regional indicator'] ==i].groupby('Country name').size().index)
-dic['Sub-Saharan Africa'].append('Angola')
-dic['Latin America and Caribbean'].append('Belize')
-dic['South Asia'].append('Bhutan')
-dic['Sub-Saharan Africa'].append('Central African Republic')
-dic['Sub-Saharan Africa'].append('Congo (Kinshasa)')
-dic['Latin America and Caribbean'].append('Cuba')
-dic['Sub-Saharan Africa'].append('Djibouti')
-dic['Latin America and Caribbean'].append('Guyana')
-dic['Middle East and North Africa'].append('Oman')
-dic['Middle East and North Africa'].append('Qatar')
-dic['Sub-Saharan Africa'].append('Somalia')
-dic['Sub-Saharan Africa'].append('Somaliland region')
-dic['Sub-Saharan Africa'].append('South Sudan')
-dic['Middle East and North Africa'].append('Sudan')
-dic['Latin America and Caribbean'].append('Suriname')
-dic['Middle East and North Africa'].append('Syria')
-dic['Latin America and Caribbean'].append('Trinidad and Tobago')
-
-def find_region(x):
-    '''Helper Function to Return Region Name based on the Country Name entered'''
-    for reg in dic.keys():
-        for c in dic[reg]:
-            if x == c:
-                return reg
-WHR_df['Regional indicator'] = WHR_df['Country name'].apply(find_region)
-
-cmbd_WHR_df = pd.concat([WHR_df,WHR2021_df])
-
-# Merge WHR data with new data
-def merge_data(prior_data, new_data, new_year_column_name, new_country_column_name):
-    '''Function to merge prior and new data'''
-
-    def convert_to_float(x):
+def convert_to_float(x):
         '''Converts inputted value to float if possible'''
         try:
             return float(x)
         except:
             return x
 
-    def fix_name(x):
+def fix_name(x):
         '''fix country names to be in same format as WHR'''
         if x == 'USA':
             return 'United States'
         else:
             return x
-    
-    new_data = new_data.dropna(subset = [new_year_column_name, new_country_column_name])
-    new_data[new_year_column_name] = new_data[[new_year_column_name]].applymap(convert_to_float)
-    new_data[new_country_column_name] = new_data[[new_country_column_name]].applymap(fix_name)
 
-    merged_df = pd.merge(prior_data,new_data,how = 'left',left_on = ['year','Country name'],right_on = [new_year_column_name, new_country_column_name])
+# Merge WHR data with new data
+def merge_data(prior_data, new_data):
+    '''Function to merge prior and new data'''
+    
+    # Combine data sets together
+    merged_df = pd.merge(prior_data.df,new_data.df,how = 'left',left_on = [prior_data.year_column,prior_data.country_column],right_on = [new_data.year_column, new_data.country_column])
+    
+    # Remove country and year column from new data if the column is not named the same as in prior data
     cols_to_remove = []
-    if new_year_column_name != 'year':
-        cols_to_remove.append(new_year_column_name)
-    if new_country_column_name != 'Country name':
-        cols_to_remove.append(new_country_column_name)
+    if new_data.year_column != prior_data.year_column:
+        cols_to_remove.append(new_data.year_column)
+    if new_data.country_column != prior_data.country_column:
+        cols_to_remove.append(new_data.country_column)
     if len(cols_to_remove) > 0:
         merged_df = merged_df.drop(columns = cols_to_remove)
-    cleaned_merged_df = merged_df.applymap(convert_to_float)
-    return cleaned_merged_df
+    
 
-def reformat_data(df):
-    temp_df = df.drop(columns = ['Regional indicator'])
-    years_present_df = temp_df[(temp_df['year'] >= 2007) & (temp_df['year'] <= 2021)].groupby('Country name').count()[['year']]
-    countries_to_include = list(years_present_df[years_present_df['year'] > 10].index)
-    included_years = [i for i in range(2007,2022)]
-    columns = temp_df.columns[2:]
+    # Clean merged data to only have countries in old and new data
+    old_countries = list(prior_data.df[prior_data.country_column].unique())
+    new_countries = list(new_data.df[new_data.country_column].unique())
+
+    def check_country(x):
+        '''Helper function to make sure countries in data were in both datasets merged together'''
+        if x in old_countries and x in new_countries:
+            return True
+        else:
+            return False
+
+    merged_df = merged_df[list(map(check_country,list(merged_df[prior_data.country_column])))]
+
+    merged_dataset = dataset(merged_df)
+
+    new_min_year = max(prior_data.min_year,new_data.min_year)
+    new_max_year = min(prior_data.max_year, new_data.max_year)
+
+    if new_max_year < new_min_year:
+        print('Datasets not compatible since max year of one is less than min year of another')
+    else:
+        merged_dataset.set_min(new_min_year)
+        merged_dataset.set_max(new_max_year)
+
+    return merged_dataset
+
+def reformat_data(dataset):
+    '''Reformat dataframe to be indexed by country with features labeled by feature and year'''
+
+    years_present_df = dataset.df[(dataset.df[dataset.year_column] >= dataset.min_year) & (dataset.df[dataset.year_column] <= dataset.max_year)].groupby(dataset.country_column).count()[[dataset.year_column]]
+    
+    # Only include countries with at least 10 years in data (We made this cutoff but it could be altered especially if less years are in the dataset)
+    countries_to_include = list(years_present_df[years_present_df[dataset.year_column] > 10].index)
+
+    included_years = [i for i in range(int(dataset.min_year),int(dataset.max_year))]
+    columns = dataset.df.columns.drop([dataset.country_column, dataset.year_column])
     new_col_names = []
     for col in columns:
         for i in included_years:
@@ -107,15 +90,14 @@ def reformat_data(df):
             col_name = f'{col}_{year}'
             new_col_names.append(col_name)
 
-    groups = temp_df.groupby('Country name')
-
-    num_cols = len(columns)
     data = {}
+    countries_to_remove = []
+    groups = dataset.df.groupby(dataset.country_column)
     for key, group in groups:
         if key in countries_to_include:
             row_data = []
-            c_group = group.drop(columns = 'Country name')
-            c_group = c_group.set_index('year')
+            c_group = group.drop(columns = dataset.country_column)
+            c_group = c_group.set_index(dataset.year_column)
             for col in columns:
                 col_years = []
                 col_vals = []
@@ -128,7 +110,7 @@ def reformat_data(df):
                     except:
                         t = 0  
                 if len(col_years) > 0:
-                    X = pd.DataFrame({'year':col_years})
+                    X = pd.DataFrame({dataset.year_column:col_years})
                     Y = pd.DataFrame({col:col_vals})[col]
                     col_predictor = LinearRegression().fit(X,Y)
                     for year in included_years:
@@ -137,68 +119,117 @@ def reformat_data(df):
                             if t == t:
                                 row_data.append(t)
                             else:
-                                predicted_value = col_predictor.predict(pd.DataFrame({'year':[year]}))[0]    
+                                predicted_value = col_predictor.predict(pd.DataFrame({dataset.year_column:[year]}))[0]    
                                 row_data.append(predicted_value) 
                         except:
-                            predicted_value = col_predictor.predict(pd.DataFrame({'year':[year]}))[0]    
+                            predicted_value = col_predictor.predict(pd.DataFrame({dataset.year_column:[year]}))[0]    
                             row_data.append(predicted_value) 
                 else:
                     for year in included_years:
                         row_data.append(np.nan) 
+                    countries_to_remove.append(key)
+                    print(f'{key} has no data for {col} so it was removed from the data.')
             data[key] = row_data
         
 
-    reformatted_data = pd.DataFrame.from_dict(data, orient='index',columns = new_col_names)
+    reformatted_df = pd.DataFrame.from_dict(data, orient='index',columns = new_col_names)
 
-    ttl_nulls = pd.DataFrame(reformatted_data.isnull().sum()).sum()
-    ttl_vals = reformatted_data.shape[0] * reformatted_data.shape[1]
-    pct_missing = str(ttl_nulls / ttl_vals)
-    print(f'Percentage missing = {pct_missing}')
-    return reformatted_data
-
-def clean_reformatted_data(reformatted_df,new_df,new_country_column_name):
-    '''Clean reformatted data to only have countries in old and new data'''
-    old_countries = list(cmbd_WHR_df.sort_values(by='Country name')['Country name'].unique())
-    new_countries = list(new_df.sort_values(by=new_country_column_name)[new_country_column_name].unique())
-
+    # Remove any country that is missing all data for any of the included feature
     def check_country(x):
-        if x in old_countries and x in new_countries:
-            return True
-        else:
+        '''Helper function to make sure countries in data were in both datasets merged together'''
+        if x in countries_to_remove:
             return False
-    cleaned_refformatted_df = reformatted_df[list(map(check_country,list(reformatted_df.index)))]
-    ttl_nulls = pd.DataFrame(cleaned_refformatted_df.isnull().sum()).sum()
-    ttl_vals = cleaned_refformatted_df.shape[0] * cleaned_refformatted_df.shape[1]
+        else:
+            return True
+
+    reformatted_df = reformatted_df[list(map(check_country,list(reformatted_df.index)))]
+
+    ttl_nulls = pd.DataFrame(reformatted_df.isnull().sum()).sum()
+    ttl_vals = reformatted_df.shape[0] * reformatted_df.shape[1]
     pct_missing = str(ttl_nulls / ttl_vals)
     print(f'Percentage missing = {pct_missing}')
-    return cleaned_refformatted_df
+    return reformatted_df
 
-def create_new_data(file_name,new_year_column_name, new_country_column_name,output_file_name):
+def find_name(pattern, columns):
+        '''Helper function to find a pattern in colum names to be 
+        able to find country name column and year column'''
+        for col in columns:
+            t = re.findall(pattern, col)
+            if len(t) > 0:
+                return col
+        return np.nan
+
+class dataset():
+    def __init__(self,df):
+        self.df = df
+        # Find column names for country and year for dataset
+        country_pattern = '[Cc]ountry' 
+        year_pattern = '[Yy]ear'  
+        self.country_column = find_name(country_pattern, self.df.columns)
+        self.year_column = find_name(year_pattern, self.df.columns)
+
+        # Clean up data to make all columns have type float (If not numerical columns they will be removed later)
+        self.df = self.df.applymap(convert_to_float)
+
+        # Clean up country names that have common errors, but may not catch all errors in naming conventions
+        self.df[self.country_column] = self.df[[self.country_column]].applymap(fix_name)
+
+        # Get rid of any non-numerical columns beside country name column
+        columns_to_drop = list(self.df.columns[self.df.dtypes != float].drop(self.country_column))
+        if len(columns_to_drop) > 0:
+            self.df = self.df.drop(columns = columns_to_drop)
+
+        if self.year_column == self.year_column:
+            # Get rid of entities with null values for country or year
+            self.df.dropna(subset = [self.country_column, self.year_column])
+            # Set min and max years included in the dataset
+            self.min_year = self.df[self.year_column].min()
+            self.max_year = self.df[self.year_column].max()
+        else:
+            # Get rid of entities with null values for country column since no year column
+            self.df.dropna(subset = [self.country_column])
+            # Set min and max years included in the dataset
+            self.min_year = self.year_column
+            self.max_year = self.year_column
+           
+    def set_min(self,new_min_year):
+        '''Internal function to reset min year of data'''
+        self.min_year = new_min_year
+    
+    def set_max(self,new_max_year):
+        '''Internal function to reset min year of data'''
+        self.max_year = new_max_year
+
+
+def create_new_data(file_name, output_file_name):
     '''Creates a cleaned and properly formatted version of WHR data combined with new data'''
+    old_df = load_in_new_data('cleaned_WHR.csv')
+    old_data = dataset(old_df)
     new_df = load_in_new_data(file_name)
-    all_data = merge_data(cmbd_WHR_df,new_df,new_year_column_name, new_country_column_name)
+    new_data = dataset(new_df)
+
+    all_data = merge_data(old_data,new_data)
     reformatted_data = reformat_data(all_data)
-    cleaned_reformatted_data = clean_reformatted_data(reformatted_data,new_df,'year')
     cwd = os.getcwd()
     output_file_path = f'{cwd}/src/final_data/{output_file_name}'
-    cleaned_reformatted_data.to_csv(output_file_path)
+    reformatted_data.to_csv(output_file_path)
     print(f'Successfully made new csv file from {file_name} called {output_file_name}')
 
 # Make final csv with all WHR data
 cwd = os.getcwd()
-WHR_data = reformat_data(cmbd_WHR_df)
+cmbd_WHR_df = load_in_new_data('cleaned_WHR.csv')
+WHR_dataset = dataset(cmbd_WHR_df)
+WHR_data = reformat_data(WHR_dataset)
 final_WHR_path = f'{cwd}/src/final_data/WHR_with_no_missing_data.csv'
 WHR_data.to_csv(final_WHR_path)
 print(f'Successfully made new csv file for WHR data called WHR_with_no_missing_data.csv')
 
 # Make final csv with all WHR and CPDS data
 CPDS_file_name = 'cleaned_CPDS.xlsx'
-create_new_data(CPDS_file_name,'year','country','gov_data_with_no_missing_data.csv')
+create_new_data(CPDS_file_name,'gov_data_with_no_missing_data.csv')
 
 # Add your own data here
 new_file_name = 'your_file_name'
-new_file_year_column_name = 'your_year_column_name'
-new_file_year_country_name = 'your_country_column_name'
 new_ouput_file_name = 'your_name_for_output_file.csv'
 #create_new_data(new_file_name,new_file_year_column_name,new_file_year_country_name,new_ouput_file_name)
 

@@ -9,6 +9,7 @@ requests = "*"
 pandas = "*"
 openpyxl = "*"
 sklearn = "*"
+regex = "*"
 
 [dev-packages]
 
