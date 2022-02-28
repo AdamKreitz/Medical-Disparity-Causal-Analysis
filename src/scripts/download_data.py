@@ -30,8 +30,7 @@ def fix_name(x):
         else:
             return x
 
-# Merge WHR data with new data
-def merge_data(prior_data, new_data):
+def merge_year_data(prior_data, new_data):
     '''Function to merge prior and new data'''
     
     # Combine data sets together
@@ -73,6 +72,37 @@ def merge_data(prior_data, new_data):
 
     return merged_dataset
 
+def merge_no_year_data(prior_data, new_data):
+    '''Function to merge prior and new data'''
+    
+    # Combine data sets together
+    merged_df = pd.merge(prior_data.df,new_data.df,how = 'left',left_on = [prior_data.country_column],right_on = [new_data.country_column])
+    
+    # Remove country and year column from new data if the column is not named the same as in prior data
+    cols_to_remove = []
+    if new_data.country_column != prior_data.country_column:
+        cols_to_remove.append(new_data.country_column)
+    if len(cols_to_remove) > 0:
+        merged_df = merged_df.drop(columns = cols_to_remove)
+    
+
+    # Clean merged data to only have countries in old and new data
+    old_countries = list(prior_data.df[prior_data.country_column].unique())
+    new_countries = list(new_data.df[new_data.country_column].unique())
+
+    def check_country(x):
+        '''Helper function to make sure countries in data were in both datasets merged together'''
+        if x in old_countries and x in new_countries:
+            return True
+        else:
+            return False
+
+    merged_df = merged_df[list(map(check_country,list(merged_df[prior_data.country_column])))]
+
+    merged_dataset = dataset(merged_df)
+
+    return merged_dataset
+
 def reformat_data(dataset):
     '''Reformat dataframe to be indexed by country with features labeled by feature and year'''
 
@@ -82,7 +112,7 @@ def reformat_data(dataset):
     countries_to_include = list(years_present_df[years_present_df[dataset.year_column] > 10].index)
 
     included_years = [i for i in range(int(dataset.min_year),int(dataset.max_year))]
-    columns = dataset.df.columns.drop([dataset.country_column, dataset.year_column])
+    columns = dataset.df.columns.drop([dataset.country_column, dataset.year_column,'index'])
     new_col_names = []
     for col in columns:
         for i in included_years:
@@ -133,6 +163,8 @@ def reformat_data(dataset):
         
 
     reformatted_df = pd.DataFrame.from_dict(data, orient='index',columns = new_col_names)
+    reformatted_df.reset_index(inplace=True)
+    reformatted_df = reformatted_df.rename(columns = {'index':dataset.country_column})
 
     # Remove any country that is missing all data for any of the included feature
     def check_country(x):
@@ -161,7 +193,7 @@ def find_name(pattern, columns):
 
 class dataset():
     def __init__(self,df):
-        self.df = df
+        self.df = df.reset_index()
         # Find column names for country and year for dataset
         country_pattern = '[Cc]ountry' 
         year_pattern = '[Yy]ear'  
@@ -173,9 +205,22 @@ class dataset():
 
         # Clean up country names that have common errors, but may not catch all errors in naming conventions
         self.df[self.country_column] = self.df[[self.country_column]].applymap(fix_name)
-
+        
         # Get rid of any non-numerical columns beside country name column
-        columns_to_drop = list(self.df.columns[self.df.dtypes != float].drop(self.country_column))
+        try:
+            self.df = self.df.drop(columns = ['Unnamed: 0'])
+        except:
+            self.df = self.df
+        try:
+            self.df = self.df.drop(columns = ['index_x'])
+        except:
+            self.df = self.df
+        columns_to_drop = []
+        for col in self.df.columns:
+            if type(self.df[col][0]) != np.float64:
+                columns_to_drop.append(col)
+           
+        columns_to_drop.remove(self.country_column)
         if len(columns_to_drop) > 0:
             self.df = self.df.drop(columns = columns_to_drop)
 
@@ -201,19 +246,43 @@ class dataset():
         self.max_year = new_max_year
 
 
-def create_new_data(file_name, output_file_name):
-    '''Creates a cleaned and properly formatted version of WHR data combined with new data'''
-    old_df = load_in_new_data('cleaned_WHR.csv')
-    old_data = dataset(old_df)
-    new_df = load_in_new_data(file_name)
-    new_data = dataset(new_df)
+def create_new_data(file_names, output_file_name):
+    '''Creates a cleaned and properly formatted version of Wall inputted file names'''
+    # Seperate data sets into those that have a year column and those that do not
+    datasets_with_years = []
+    datasets_without_years = []
+    for file_name in file_names:
+        df = load_in_new_data(file_name)
+        new_dataset = dataset(df)
+        if new_dataset.year_column == new_dataset.year_column:
+            datasets_with_years.append(new_dataset)
+        else:
+            datasets_without_years.append(new_dataset)
+    
+    # Merge all datasets with years
+    while len(datasets_with_years) > 1:
+        merged_dataset = merge_year_data(datasets_with_years[0],datasets_with_years[1])
+        datasets_with_years = [merged_dataset] + datasets_with_years[2:]
 
-    all_data = merge_data(old_data,new_data)
-    reformatted_data = reformat_data(all_data)
+    # Reformat data with years
+    if len(datasets_with_years) == 1:
+        reformatted_data = dataset(reformat_data(datasets_with_years[0]))
+        datasets_without_years = [reformatted_data] + datasets_without_years
+    
+    # Merge all data
+    while len(datasets_without_years) > 1:
+        merged_dataset = merge_no_year_data(datasets_without_years[0],datasets_without_years[1])
+        datasets_without_years = [merged_dataset] + datasets_without_years[2:]
+    final_dataset = datasets_without_years[0]
+    try:
+        final_dataset.df = final_dataset.df.drop(columns = ['index'])
+    except:
+        final_dataset.df = final_dataset.df
     cwd = os.getcwd()
     output_file_path = f'{cwd}/src/final_data/{output_file_name}'
-    reformatted_data.to_csv(output_file_path)
-    print(f'Successfully made new csv file from {file_name} called {output_file_name}')
+    final_dataset.df.to_csv(output_file_path)
+    print(f'Successfully made new csv file called {output_file_name}')
+
 
 # Make final csv with all WHR data
 cwd = os.getcwd()
@@ -225,8 +294,10 @@ WHR_data.to_csv(final_WHR_path)
 print(f'Successfully made new csv file for WHR data called WHR_with_no_missing_data.csv')
 
 # Make final csv with all WHR and CPDS data
+WHR_file_name = 'cleaned_WHR.csv'
 CPDS_file_name = 'cleaned_CPDS.xlsx'
-create_new_data(CPDS_file_name,'gov_data_with_no_missing_data.csv')
+file_names = [WHR_file_name,CPDS_file_name,'wealth_data.csv']
+create_new_data(file_names,'all_data_with_no_missing_data.csv')
 
 # Add your own data here
 new_file_name = 'your_file_name'
