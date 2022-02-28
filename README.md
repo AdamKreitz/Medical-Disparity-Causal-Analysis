@@ -21,8 +21,8 @@ cd .\Medical-Disparity-Causal-Analysis\
 pip install pipenv
 pipenv install .
 ```
-4. Save the data you would like to reformat to src/data as a csv or xlsx file. This data must be global time series data identified by country names and year. 
-5. Open the code of src/scripts/downloa_data.py with whatever method works from you local terminal or file exploror. Edit the 4 variables after the line "# Add your own data here" towards the bottom of the script to have the correct names for your file name, including the extension .csv or .xlsx, exact name for year and country columns in your data, the name for your output file before .csv, and finally delete the "#" from before the last line of code. Remember to save the changes to this file.
+4. Save the data you would like to reformat to src/data as a csv or xlsx file. This data must be global time series data identified by country names or country name and year. 
+5. Open the code of src/scripts/download_data.py with whatever method works from you local terminal or file exploror. Edit the 2 variables after the line "# Add your own data here" towards the bottom of the script to have the correct names for your file names in the list for variable name "new_file_names", including the extension .csv or .xlsx, and the name for your output file before .csv. Once these variable are edited, delete the "#" from before the last line of code then to save the changes to this file.
 6. Run the code to have your new data file added to src/final_data with your inputted file name with: 
 ```
 pipenv run .\src\scripts\download_data.py
