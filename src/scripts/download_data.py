@@ -284,23 +284,19 @@ def create_new_data(file_names, output_file_name):
     print(f'Successfully made new csv file called {output_file_name}')
 
 
-# Make final csv with all WHR data
-cwd = os.getcwd()
-cmbd_WHR_df = load_in_new_data('cleaned_WHR.csv')
-WHR_dataset = dataset(cmbd_WHR_df)
-WHR_data = reformat_data(WHR_dataset)
-final_WHR_path = f'{cwd}/src/final_data/WHR_with_no_missing_data.csv'
-WHR_data.to_csv(final_WHR_path)
-print(f'Successfully made new csv file for WHR data called WHR_with_no_missing_data.csv')
-
-# Make final csv with all WHR and CPDS data
+# Make final csv with all WHR and wealth data
 WHR_file_name = 'cleaned_WHR.csv'
 CPDS_file_name = 'cleaned_CPDS.xlsx'
+file_names = [WHR_file_name,'wealth_data.csv']
+create_new_data(file_names,'WHR_and_wealth_with_no_missing_data.csv')
+
+
+# Make final csv with all WHR, CPDS and wealth data
 file_names = [WHR_file_name,CPDS_file_name,'wealth_data.csv']
 create_new_data(file_names,'all_data_with_no_missing_data.csv')
 
 # Add your own data here
-new_file_name = 'your_file_name'
+new_file_names = ['your_file_name']
 new_ouput_file_name = 'your_name_for_output_file.csv'
-#create_new_data(new_file_name,new_file_year_column_name,new_file_year_country_name,new_ouput_file_name)
+#create_new_data(new_file_names,new_ouput_file_name)
 
