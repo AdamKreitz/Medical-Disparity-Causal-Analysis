@@ -111,7 +111,7 @@ def reformat_data(dataset):
     # Only include countries with at least 10 years in data (We made this cutoff but it could be altered especially if less years are in the dataset)
     countries_to_include = list(years_present_df[years_present_df[dataset.year_column] > 10].index)
 
-    included_years = [i for i in range(int(dataset.min_year),int(dataset.max_year))]
+    included_years = [i for i in range(int(dataset.min_year),int(dataset.max_year) + 1)]
     columns = dataset.df.columns.drop([dataset.country_column, dataset.year_column,'index'])
     new_col_names = []
     for col in columns:
@@ -218,6 +218,8 @@ class dataset():
         columns_to_drop = []
         for col in self.df.columns:
             if type(self.df[col][0]) != np.float64:
+                columns_to_drop.append(col)
+            elif self.df[col].nunique() <= 2:
                 columns_to_drop.append(col)
            
         columns_to_drop.remove(self.country_column)
