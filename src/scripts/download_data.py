@@ -248,7 +248,7 @@ class dataset():
         self.max_year = new_max_year
 
 
-def create_new_data(file_names, output_file_name):
+def create_new_data(file_names):
     '''Creates a cleaned and properly formatted version of Wall inputted file names'''
     # Seperate data sets into those that have a year column and those that do not
     datasets_with_years = []
@@ -280,22 +280,21 @@ def create_new_data(file_names, output_file_name):
         final_dataset.df = final_dataset.df.drop(columns = ['index'])
     except:
         final_dataset.df = final_dataset.df
-    cwd = os.getcwd()
-    output_file_path = f'{cwd}/src/final_data/{output_file_name}'
-    final_dataset.df.to_csv(output_file_path)
-    print(f'Successfully made new csv file called {output_file_name}')
+    return final_dataset.df
 
 
 # Make final csv with all WHR and wealth data
 WHR_file_name = 'cleaned_WHR.csv'
 CPDS_file_name = 'cleaned_CPDS.xlsx'
 file_names = [WHR_file_name,'wealth_data.csv']
-create_new_data(file_names,'WHR_and_wealth_with_no_missing_data.csv')
+output_file_name = 'WHR_and_wealth_with_no_missing_data.csv'
+create_new_data(file_names)
 
 
 # Make final csv with all WHR, CPDS and wealth data
 file_names = [WHR_file_name,CPDS_file_name,'wealth_data.csv']
-create_new_data(file_names,'all_data_with_no_missing_data.csv')
+output_file_name = 'all_data_with_no_missing_data.csv'
+create_new_data(file_names)
 
 # Add your own data here
 new_file_names = ['your_file_name']
