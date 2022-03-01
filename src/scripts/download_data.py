@@ -282,22 +282,81 @@ def create_new_data(file_names):
         final_dataset.df = final_dataset.df
     return final_dataset.df
 
+# Define function to Run PC (Default is fisherz test with no missing values but can be changed)
+def run_pc_on_data(input_df, alpha=0.05, func_type = fisherz):
+    cg = pc(np.array(input_df), 0.05, fisherz, True, uc_rule=1)
+    tier_list = {}
+    for i in WHR_df.columns:
+        tier_list[i] = (int(i[-4:]) - 2005)
 
+    ## Rename the nodes
+
+    nodes = cg.G.get_nodes()
+    names = list(WHR_df.columns)
+    for i in range(len(nodes)):
+
+        node = nodes[i]
+        name = names[i]
+        node.set_name(name)
+
+    ## Create the tiers
+
+    nodes = cg.G.get_nodes()
+    names = list(WHR_df.columns)
+    tier = {}
+    bk = BackgroundKnowledge()
+    for i in range(len(nodes)):
+       #print(i.get_name())
+        #print(d[int(i.get_name()[1])-1][1])
+
+        node = nodes[i]
+        name = names[i]
+        #node.set_name(name)
+        #tier[i.get_name()] = int(((d[int(i.get_name()[1:])-1][1])/3)+9) 
+
+        t = tier_list[name]
+        bk = bk.add_node_to_tier(node,int(t))
+    cg = pc(np.array(input_df), alpha, \
+    fisherz, True, mvpc=False, uc_rule=1, background_knowledge = bk)
+    cg.to_nx_graph()
+    cg.draw_nx_graph(skel=False)
+    d = {}
+    for i in cg.find_fully_directed():
+        if int(test.columns[int(i[0])][-4:]) - int(test.columns[int(i[1])][-4:]) < 0:
+            if test.columns[int(i[0])][:-5] in d:
+                d[test.columns[int(i[1])][:-5] + '--->' + test.columns[int(i[0])][:-5] + ', Years away: ' \
+                  + str(int(test.columns[int(i[1])][-4:]) - int(test.columns[int(i[0])][-4:]))] += 1 
+            else:
+                d[test.columns[int(i[1])][:-5] + '--->' + test.columns[int(i[0])][:-5] + ', Years away: ' \
+                  + str(int(test.columns[int(i[1])][-4:]) - int(test.columns[int(i[0])][-4:]))] = 1 
+        else:
+            if test.columns[int(i[0])][:-5] in d:
+                d[test.columns[int(i[0])][:-5] + '--->' + test.columns[int(i[1])][:-5] + ', Years away: ' \
+              + str(int(test.columns[int(i[0])][-4:]) - int(test.columns[int(i[1])][-4:]))] += 1 
+            else:
+                d[test.columns[int(i[0])][:-5] + '--->' + test.columns[int(i[1])][:-5] + ', Years away: ' \
+              + str(int(test.columns[int(i[0])][-4:]) - int(test.columns[int(i[1])][-4:]))] = 1
+                
+    return d
+    
+
+    ## Combine your data with any of the following
 # Make final csv with all WHR and wealth data
 WHR_file_name = 'cleaned_WHR.csv'
 CPDS_file_name = 'cleaned_CPDS.xlsx'
 file_names = [WHR_file_name,'wealth_data.csv']
 output_file_name = 'WHR_and_wealth_with_no_missing_data.csv'
-create_new_data(file_names)
+#final_df = create_new_data(file_names)
 
 
 # Make final csv with all WHR, CPDS and wealth data
 file_names = [WHR_file_name,CPDS_file_name,'wealth_data.csv']
 output_file_name = 'all_data_with_no_missing_data.csv'
-create_new_data(file_names)
+#final_df = create_new_data(file_names)
 
 # Add your own data here
 new_file_names = ['your_file_name']
 new_ouput_file_name = 'your_name_for_output_file.csv'
-#create_new_data(new_file_names,new_ouput_file_name)
+#final_df = create_new_data(new_file_names,new_ouput_file_name)
 
+run_pc_on_data(final_df, alpha = 0.2)
