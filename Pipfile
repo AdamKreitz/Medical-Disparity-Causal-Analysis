@@ -10,6 +10,7 @@ pandas = "*"
 openpyxl = "*"
 sklearn = "*"
 regex = "*"
+causal-learn = "*"
 
 [dev-packages]
 
