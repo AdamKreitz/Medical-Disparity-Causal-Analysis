@@ -6,15 +6,6 @@ import regex as re
 from pathlib import Path
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from causallearn.graph.GraphClass import CausalGraph
-from causallearn.search.ConstraintBased.PC import pc
-from causallearn.utils.PCUtils import SkeletonDiscovery
-from causallearn.utils.PCUtils.BackgroundKnowledge import BackgroundKnowledge
-from causallearn.utils.PCUtils.BackgroundKnowledgeOrientUtils import orient_by_background_knowledge
-from causallearn.graph.GraphNode import GraphNode
-from causallearn.utils.cit import fisherz
-from causallearn.utils.cit import mv_fisherz
-from causallearn.utils.cit import kci
 
 #Load in csvs
 def load_in_new_data(file_name):
@@ -257,7 +248,7 @@ class dataset():
         self.max_year = new_max_year
 
 
-def create_new_data(file_names,output_file_name):
+def create_new_data(file_names):
     '''Creates a cleaned and properly formatted version of Wall inputted file names'''
     # Seperate data sets into those that have a year column and those that do not
     datasets_with_years = []
@@ -289,15 +280,11 @@ def create_new_data(file_names,output_file_name):
         final_dataset.df = final_dataset.df.drop(columns = ['index'])
     except:
         final_dataset.df = final_dataset.df
-    cwd = os.getcwd()
-    output_file_path = f'{cwd}/src/final_data/{output_file_name}'
-    final_dataset.df.to_csv(output_file_path)
-    print(f'Successfully made new csv file called {output_file_name}')
     return final_dataset.df
 
 # Define function to Run PC (Default is fisherz test with no missing values but can be changed)
 def run_pc_on_data(input_df, alpha=0.05, func_type = fisherz):
-    cg = pc(np.array(input_df), alpha, func_type, True, uc_rule=1)
+    cg = pc(np.array(input_df), 0.05, fisherz, True, uc_rule=1)
     tier_list = {}
     for i in input_df.columns:
         tier_list[i] = (int(i[-4:]) - 2005)
@@ -329,26 +316,29 @@ def run_pc_on_data(input_df, alpha=0.05, func_type = fisherz):
 
         t = tier_list[name]
         bk = bk.add_node_to_tier(node,int(t))
-    cg = pc(np.array(input_df), alpha, func_type, True, mvpc=False, uc_rule=1, background_knowledge = bk)
+    cg = pc(np.array(input_df), alpha, \
+    fisherz, True, mvpc=False, uc_rule=1, background_knowledge = bk)
     cg.to_nx_graph()
     cg.draw_nx_graph(skel=False)
     d = {}
     for i in cg.find_fully_directed():
-        if int(test.columns[int(i[0])][-4:]) - int(test.columns[int(i[1])][-4:]) < 0:
-            if test.columns[int(i[0])][:-5] in d:
-                d[test.columns[int(i[1])][:-5] + '--->' + test.columns[int(i[0])][:-5] + ', Years away: ' \
-                  + str(int(test.columns[int(i[1])][-4:]) - int(test.columns[int(i[0])][-4:]))] += 1 
+        try:
+            if int(input_df.columns[int(i[0])][-4:]) - int(input_df.columns[int(i[1])][-4:]) < 0:
+                if input_df.columns[int(i[0])][:-5] in d:
+                    d[input_df.columns[int(i[1])][:-5] + '--->' + input_df.columns[int(i[0])][:-5] + ', Years away: ' \
+                      + str(int(input_df.columns[int(i[1])][-4:]) - int(input_df.columns[int(i[0])][-4:]))] += 1 
+                else:
+                    d[input_df.columns[int(i[1])][:-5] + '--->' + input_df.columns[int(i[0])][:-5] + ', Years away: ' \
+                      + str(int(input_df.columns[int(i[1])][-4:]) - int(input_df.columns[int(i[0])][-4:]))] = 1 
             else:
-                d[test.columns[int(i[1])][:-5] + '--->' + test.columns[int(i[0])][:-5] + ', Years away: ' \
-                  + str(int(test.columns[int(i[1])][-4:]) - int(test.columns[int(i[0])][-4:]))] = 1 
-        else:
-            if test.columns[int(i[0])][:-5] in d:
-                d[test.columns[int(i[0])][:-5] + '--->' + test.columns[int(i[1])][:-5] + ', Years away: ' \
-              + str(int(test.columns[int(i[0])][-4:]) - int(test.columns[int(i[1])][-4:]))] += 1 
-            else:
-                d[test.columns[int(i[0])][:-5] + '--->' + test.columns[int(i[1])][:-5] + ', Years away: ' \
-              + str(int(test.columns[int(i[0])][-4:]) - int(test.columns[int(i[1])][-4:]))] = 1
-                
+                if input_df.columns[int(i[0])][:-5] in d:
+                    d[input_df.columns[int(i[0])][:-5] + '--->' + input_df.columns[int(i[1])][:-5] + ', Years away: ' \
+                  + str(int(input_df.columns[int(i[0])][-4:]) - int(input_df.columns[int(i[1])][-4:]))] += 1 
+                else:
+                    d[input_df.columns[int(i[0])][:-5] + '--->' + input_df.columns[int(i[1])][:-5] + ', Years away: ' \
+                  + str(int(input_df.columns[int(i[0])][-4:]) - int(input_df.columns[int(i[1])][-4:]))] = 1
+        except:
+            d[input_df.columns[int(i[0])] + '-->' + input_df.columns[int(i[1])]] = 1
     return d
     
 
@@ -358,7 +348,7 @@ WHR_file_name = 'cleaned_WHR.csv'
 CPDS_file_name = 'cleaned_CPDS.xlsx'
 file_names = [WHR_file_name,'wealth_data.csv']
 output_file_name = 'WHR_and_wealth_with_no_missing_data.csv'
-final_df = create_new_data(file_names)
+#final_df = create_new_data(file_names)
 
 
 # Make final csv with all WHR, CPDS and wealth data
