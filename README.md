@@ -24,7 +24,7 @@ cd .\Medical-Disparity-Causal-Analysis\
 3. Install pipenv on your local machine and use it to to install the dependencies needed to run our code with: 
 ```
 pip install pipenv
-pipenv install .
+pipenv install
 ```
 4. Save the data you would like to reformat to src/data as a csv or xlsx file. 
 5. When adding in your own datasets there are a few prior cleaning steps that may have to be done. For any of our provided datasets that you want to use, this step can be skipped. First, the data must be global time series data identified by country names or country name and year. All datasets must have a column with country names that has "country" in the column name. The country names also must follow the same naming conventions as other data that you are merging your data with. If you wish to have an included column with years, then "year" must be in the column's name. When combining datasets with a year column, the pipeline will only include years that are in both datasets, so make sure the years are overlapping in their span. 
