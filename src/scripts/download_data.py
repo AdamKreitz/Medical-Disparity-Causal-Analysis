@@ -290,22 +290,30 @@ def create_new_data(file_names,output_file_name):
     except:
         final_dataset.df = final_dataset.df
     cwd = os.getcwd()
-    output_file_path = f'{cwd}/src/final_data/{output_file_name}'
+    output_file_path = f'{cwd}/src/final_data/{output_file_name}.csv'
     final_dataset.df.to_csv(output_file_path)
-    print(f'Successfully made new csv file called {output_file_name}')
-    return final_dataset.df
+    print(f'Successfully made new csv file of final data called {output_file_name} in final_data folder.')
+    return final_dataset
 
 # Define function to Run PC (Default is fisherz test with no missing values but can be changed)
-def run_pc_on_data(input_df, alpha=0.05, func_type = fisherz):
-    cg = pc(np.array(input_df), alpha, func_type, True, uc_rule=1)
+def run_pc_on_data(input_dataset, file_name, alpha=0.05, func_type = fisherz):
+    input_dataset.df = input_dataset.df.set_index(input_dataset.country_column)
+
+    # Run initial PC to get nodes
+    cg = pc(np.array(input_dataset.df), alpha, func_type, True, uc_rule=1)
+    
     tier_list = {}
-    for i in input_df.columns:
-        tier_list[i] = (int(i[-4:]) - 2005)
+    for col in input_dataset.df.columns:
+        try:
+            col_year = int(col[-4:]) - input_dataset.min_year
+        except:
+            col_year = 0
+        tier_list[col] = col_year
 
     ## Rename the nodes
 
     nodes = cg.G.get_nodes()
-    names = list(input_df.columns)
+    names = list(input_dataset.df.columns)
     for i in range(len(nodes)):
 
         node = nodes[i]
@@ -315,60 +323,70 @@ def run_pc_on_data(input_df, alpha=0.05, func_type = fisherz):
     ## Create the tiers
 
     nodes = cg.G.get_nodes()
-    names = list(input_df.columns)
-    tier = {}
+    names = list(input_dataset.df.columns)
+  
     bk = BackgroundKnowledge()
     for i in range(len(nodes)):
-       #print(i.get_name())
-        #print(d[int(i.get_name()[1])-1][1])
-
         node = nodes[i]
-        name = names[i]
-        #node.set_name(name)
-        #tier[i.get_name()] = int(((d[int(i.get_name()[1:])-1][1])/3)+9) 
+        name = names[i] 
 
         t = tier_list[name]
         bk = bk.add_node_to_tier(node,int(t))
-    cg = pc(np.array(input_df), alpha, func_type, True, mvpc=False, uc_rule=1, background_knowledge = bk)
+    cg = pc(np.array(input_dataset.df), alpha, func_type, True, mvpc=False, uc_rule=1, background_knowledge = bk)
     cg.to_nx_graph()
     cg.draw_nx_graph(skel=False)
-    d = {}
-    for i in cg.find_fully_directed():
-        if int(test.columns[int(i[0])][-4:]) - int(test.columns[int(i[1])][-4:]) < 0:
-            if test.columns[int(i[0])][:-5] in d:
-                d[test.columns[int(i[1])][:-5] + '--->' + test.columns[int(i[0])][:-5] + ', Years away: ' \
-                  + str(int(test.columns[int(i[1])][-4:]) - int(test.columns[int(i[0])][-4:]))] += 1 
-            else:
-                d[test.columns[int(i[1])][:-5] + '--->' + test.columns[int(i[0])][:-5] + ', Years away: ' \
-                  + str(int(test.columns[int(i[1])][-4:]) - int(test.columns[int(i[0])][-4:]))] = 1 
+
+    connection_dict = {}
+    def add_to_dict(dict, key):
+        if key in dict.keys():
+            dict[key] += 1
         else:
-            if test.columns[int(i[0])][:-5] in d:
-                d[test.columns[int(i[0])][:-5] + '--->' + test.columns[int(i[1])][:-5] + ', Years away: ' \
-              + str(int(test.columns[int(i[0])][-4:]) - int(test.columns[int(i[1])][-4:]))] += 1 
-            else:
-                d[test.columns[int(i[0])][:-5] + '--->' + test.columns[int(i[1])][:-5] + ', Years away: ' \
-              + str(int(test.columns[int(i[0])][-4:]) - int(test.columns[int(i[1])][-4:]))] = 1
-                
-    return d
+            dict[key] = 1
+
+    for connection in cg.find_fully_directed():
+        # connection is tuple with first value as index of first column in connection and second value as second column in connection
+        first_col = input_dataset.df.columns[int(connection[0])]
+        second_col = input_dataset.df.columns[int(connection[1])]
+        try:
+            first_col_year = int(first_col[-4:]) - input_dataset.min_year
+            first_col_feature = first_col[:-5]
+        except:
+            first_col_year = np.nan
+            first_col_feature = first_col
+        try:
+            second_col_year = int(second_col[-4:]) - input_dataset.min_year
+            second_col_feature = second_col[:-5]
+        except:
+            second_col_year = np.nan
+            second_col_feature = second_col
+        
+        if (first_col_year != first_col_year) or (second_col_year != second_col_year):
+            year_diff = -1
+            relation = tuple([first_col_feature, second_col_feature, year_diff])
+        elif first_col_year > second_col_year:
+            year_diff = first_col_year - second_col_year
+            relation = tuple([second_col_feature, first_col_feature, year_diff])
+        else:
+            year_diff = second_col_year - first_col_year
+            relation = tuple([first_col_feature, second_col_feature, year_diff])
+
+        add_to_dict(connection_dict, relation)
     
-
-    ## Combine your data with any of the following
-# Make final csv with all WHR and wealth data
-WHR_file_name = 'cleaned_WHR.csv'
-CPDS_file_name = 'cleaned_CPDS.xlsx'
-file_names = [WHR_file_name,'wealth_data.csv']
-output_file_name = 'WHR_and_wealth_with_no_missing_data.csv'
-final_df = create_new_data(file_names)
-
-
-# Make final csv with all WHR, CPDS and wealth data
-file_names = [WHR_file_name,CPDS_file_name,'wealth_data.csv']
-output_file_name = 'all_data_with_no_missing_data.csv'
-#final_df = create_new_data(file_names)
+    relation_df = pd.DataFrame.from_dict(connection_dict,orient = 'index',columns = ['Frequency']).reset_index()
+    relation_df['Feature 1'] = relation_df[['index']].applymap(lambda x : x[0])
+    relation_df['Feature 2'] = relation_df[['index']].applymap(lambda x : x[1])
+    relation_df['Year Difference'] = relation_df[['index']].applymap(lambda x : x[2])
+    relation_df = relation_df.drop(columns='index')
+    relation_df = relation_df.sort_values(by = 'Frequency', ascending = False)
+    cwd = os.getcwd()
+    output_file_path = f'{cwd}/src/Results/{file_name}.csv'
+    relation_df.df.to_csv(output_file_path)
+    print(f'Successfully made new csv file of results called {file_name} in Results folder.')
+    return relation_df
 
 # Add your own data here
 new_file_names = ['your_file_name']
-new_ouput_file_name = 'your_name_for_output_file.csv'
-#final_df = create_new_data(new_file_names,new_ouput_file_name)
-
-run_pc_on_data(final_df, alpha = 0.2)
+new_run_name = 'your_name_for_output_file.csv'
+#final_dataset = create_new_data(file_names,new_run_name)
+#relations = run_pc_on_data(final_dataset, run_name, alpha = 0.2)
+#print(relations)
