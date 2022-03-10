@@ -6,6 +6,15 @@ import regex as re
 from pathlib import Path
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+from causallearn.graph.GraphClass import CausalGraph
+from causallearn.search.ConstraintBased.PC import pc
+from causallearn.utils.PCUtils import SkeletonDiscovery
+from causallearn.utils.PCUtils.BackgroundKnowledge import BackgroundKnowledge
+from causallearn.utils.PCUtils.BackgroundKnowledgeOrientUtils import orient_by_background_knowledge
+from causallearn.graph.GraphNode import GraphNode
+from causallearn.utils.cit import fisherz
+from causallearn.utils.cit import mv_fisherz
+from causallearn.utils.cit import kci
 
 #Load in csvs
 def load_in_new_data(file_name):
@@ -280,11 +289,11 @@ def create_new_data(file_names):
         final_dataset.df = final_dataset.df.drop(columns = ['index'])
     except:
         final_dataset.df = final_dataset.df
-<<<<<<< HEAD
+
     cwd = os.getcwd()
-    output_file_path = f'{cwd}/src/final_data/{output_file_name}.csv'
+    output_file_path = f'{cwd}/src/final_data/{file_names}.csv'
     final_dataset.df.to_csv(output_file_path)
-    print(f'Successfully made new csv file of final data called {output_file_name} in final_data folder.')
+    print(f'Successfully made new csv file of final data called {file_names} in final_data folder.')
     return final_dataset
 
 # Define function to Run PC (Default is fisherz test with no missing values but can be changed)
@@ -294,13 +303,6 @@ def run_pc_on_data(input_dataset, file_name, alpha=0.05, func_type = fisherz):
     # Run initial PC to get nodes
     cg = pc(np.array(input_dataset.df), alpha, func_type, True, uc_rule=1)
     
-=======
-    return final_dataset.df
-
-# Define function to Run PC (Default is fisherz test with no missing values but can be changed)
-def run_pc_on_data(input_df, alpha=0.05, func_type = fisherz):
-    cg = pc(np.array(input_df), 0.05, fisherz, True, uc_rule=1)
->>>>>>> f03d72f6c28895d0f2becf9559b4238610c4bc9b
     tier_list = {}
     for col in input_dataset.df.columns:
         try:
@@ -331,7 +333,6 @@ def run_pc_on_data(input_df, alpha=0.05, func_type = fisherz):
 
         t = tier_list[name]
         bk = bk.add_node_to_tier(node,int(t))
-<<<<<<< HEAD
     cg = pc(np.array(input_dataset.df), alpha, func_type, True, mvpc=False, uc_rule=1, background_knowledge = bk)
     cg.to_nx_graph()
     cg.draw_nx_graph(skel=False)
@@ -342,41 +343,6 @@ def run_pc_on_data(input_df, alpha=0.05, func_type = fisherz):
             dict[key] += 1
         else:
             dict[key] = 1
-=======
-    cg = pc(np.array(input_df), alpha, \
-    fisherz, True, mvpc=False, uc_rule=1, background_knowledge = bk)
-    cg.to_nx_graph()
-    cg.draw_nx_graph(skel=False)
-    d = {}
-    for i in cg.find_fully_directed():
-        try:
-            if int(input_df.columns[int(i[0])][-4:]) - int(input_df.columns[int(i[1])][-4:]) < 0:
-                if input_df.columns[int(i[0])][:-5] in d:
-                    d[input_df.columns[int(i[1])][:-5] + '--->' + input_df.columns[int(i[0])][:-5] + ', Years away: ' \
-                      + str(int(input_df.columns[int(i[1])][-4:]) - int(input_df.columns[int(i[0])][-4:]))] += 1 
-                else:
-                    d[input_df.columns[int(i[1])][:-5] + '--->' + input_df.columns[int(i[0])][:-5] + ', Years away: ' \
-                      + str(int(input_df.columns[int(i[1])][-4:]) - int(input_df.columns[int(i[0])][-4:]))] = 1 
-            else:
-                if input_df.columns[int(i[0])][:-5] in d:
-                    d[input_df.columns[int(i[0])][:-5] + '--->' + input_df.columns[int(i[1])][:-5] + ', Years away: ' \
-                  + str(int(input_df.columns[int(i[0])][-4:]) - int(input_df.columns[int(i[1])][-4:]))] += 1 
-                else:
-                    d[input_df.columns[int(i[0])][:-5] + '--->' + input_df.columns[int(i[1])][:-5] + ', Years away: ' \
-                  + str(int(input_df.columns[int(i[0])][-4:]) - int(input_df.columns[int(i[1])][-4:]))] = 1
-        except:
-            d[input_df.columns[int(i[0])] + '-->' + input_df.columns[int(i[1])]] = 1
-    return d
-    
-
-    ## Combine your data with any of the following
-# Make final csv with all WHR and wealth data
-WHR_file_name = 'cleaned_WHR.csv'
-CPDS_file_name = 'cleaned_CPDS.xlsx'
-file_names = [WHR_file_name,'wealth_data.csv']
-output_file_name = 'WHR_and_wealth_with_no_missing_data.csv'
-#final_df = create_new_data(file_names)
->>>>>>> f03d72f6c28895d0f2becf9559b4238610c4bc9b
 
     for connection in cg.find_fully_directed():
         # connection is tuple with first value as index of first column in connection and second value as second column in connection
