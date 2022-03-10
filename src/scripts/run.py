@@ -21,9 +21,9 @@ def load_in_new_data(file_name):
     '''Load in data from file name and output as pandas dataframe'''
     cwd = os.getcwd()
     try:
-        return pd.read_csv(f'{cwd}\src\data\{file_name}')
+        return pd.read_csv(f'{cwd}/src/data/{file_name}')
     except:
-        return pd.read_excel(f'{cwd}\src\data\{file_name}')
+        return pd.read_excel(f'{cwd}/src/data/{file_name}')
 
 def convert_to_float(x):
         '''Converts inputted value to float if possible'''
