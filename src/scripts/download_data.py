@@ -21,9 +21,9 @@ def load_in_new_data(file_name):
     '''Load in data from file name and output as pandas dataframe'''
     cwd = os.getcwd()
     try:
-        return pd.read_csv(f'{cwd}\src\data\{file_name}')
+        return pd.read_csv(f'{cwd}/src/data/{file_name}')
     except:
-        return pd.read_excel(f'{cwd}\src\data\{file_name}')
+        return pd.read_excel(f'{cwd}/src/data/{file_name}')
 
 def convert_to_float(x):
         '''Converts inputted value to float if possible'''
@@ -257,7 +257,7 @@ class dataset():
         self.max_year = new_max_year
 
 
-def create_new_data(file_names):
+def create_new_data(file_names,output_file_name):
     '''Creates a cleaned and properly formatted version of Wall inputted file names'''
     # Seperate data sets into those that have a year column and those that do not
     datasets_with_years = []
@@ -289,11 +289,10 @@ def create_new_data(file_names):
         final_dataset.df = final_dataset.df.drop(columns = ['index'])
     except:
         final_dataset.df = final_dataset.df
-
     cwd = os.getcwd()
-    output_file_path = f'{cwd}/src/final_data/{file_names}.csv'
+    output_file_path = f'{cwd}/src/final_data/{output_file_name}_Reformatted.csv'
     final_dataset.df.to_csv(output_file_path)
-    print(f'Successfully made new csv file of final data called {file_names} in final_data folder.')
+    print(f'Successfully made new csv file of final data called {output_file_name} in final_data folder.')
     return final_dataset
 
 # Define function to Run PC (Default is fisherz test with no missing values but can be changed)
@@ -380,7 +379,7 @@ def run_pc_on_data(input_dataset, file_name, alpha=0.05, func_type = fisherz):
     relation_df = relation_df.drop(columns='index')
     relation_df = relation_df.sort_values(by = 'Frequency', ascending = False)
     cwd = os.getcwd()
-    output_file_path = f'{cwd}/src/Results/{file_name}.csv'
+    output_file_path = f'{cwd}/src/Results/{file_name}_Results.csv'
     relation_df.df.to_csv(output_file_path)
     print(f'Successfully made new csv file of results called {file_name} in Results folder.')
     return relation_df
