@@ -290,7 +290,7 @@ def create_new_data(file_names,output_file_name):
     except:
         final_dataset.df = final_dataset.df
     cwd = os.getcwd()
-    output_file_path = f'{cwd}/src/final_data/{output_file_name}.csv'
+    output_file_path = f'{cwd}/src/final_data/{output_file_name}_Reformatted.csv'
     final_dataset.df.to_csv(output_file_path)
     print(f'Successfully made new csv file of final data called {output_file_name} in final_data folder.')
     return final_dataset
@@ -379,7 +379,7 @@ def run_pc_on_data(input_dataset, file_name, alpha=0.05, func_type = fisherz):
     relation_df = relation_df.drop(columns='index')
     relation_df = relation_df.sort_values(by = 'Frequency', ascending = False)
     cwd = os.getcwd()
-    output_file_path = f'{cwd}/src/Results/{file_name}.csv'
+    output_file_path = f'{cwd}/src/Results/{file_name}_Results.csv'
     relation_df.df.to_csv(output_file_path)
     print(f'Successfully made new csv file of results called {file_name} in Results folder.')
     return relation_df
