@@ -33,5 +33,5 @@ pipenv install
 ```
 pipenv run .\src\scripts\download_data.py
 ```
-8. After all these steps, a dictionary of relations should be outputted in your terminal. 
+8. After all these steps, a table of relations with the most common relations at the top should be outputted in your terminal. 
 9. This step is not neccesary, but for further exploration into the causal relations present you can adjust the signifigance level of PC. Higher signifigance will lead to more relations being present and vice versa. The default signifigance is .2 and this value must be between 0 and 1. The signifigance can be adjusted by editing the value of alpha in the last line of code. 
