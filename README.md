@@ -1,4 +1,4 @@
-## Life Expectancy Causal Analysis Project
+## Quality of Life Causal Analysis Project
 
 In this project, we aim to establish causality between various socioeconomic variables and life expectancy outcomes in  roughly 166 different countries, noting the strongest connections between economic and political factors with the length of life expectancy. 
 
